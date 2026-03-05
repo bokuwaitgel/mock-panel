@@ -1,100 +1,52 @@
 import { useAdmin } from '../admin/AdminContext'
 
 export function SessionsPage() {
-  const {
-    busy,
-    sessions,
-    sessionForm,
-    setSessionForm,
-    sessionEditId,
-    saveSession,
-    cancelSessionEdit,
-    startSessionEdit,
-    deleteSession,
-    getRecordId,
-    toDateTimeLocal,
-  } = useAdmin()
+  const { sessions, getRecordId, formatDate } = useAdmin()
 
   return (
-    <section className="page-grid">
+    <section className="page-grid" style={{ gridTemplateColumns: '1fr' }}>
       <article className="card">
-        <h3>{sessionEditId ? 'Edit Session' : 'Create Session'}</h3>
-        <form onSubmit={saveSession}>
-          <div className="row">
-            <label htmlFor="session-name">Name</label>
-            <input
-              id="session-name"
-              value={sessionForm.name}
-              onChange={(event) => setSessionForm((old) => ({ ...old, name: event.target.value }))}
-              required
-            />
-          </div>
-
-          <div className="row two-col">
-            <div>
-              <label htmlFor="session-start">Start Time</label>
-              <input
-                id="session-start"
-                type="datetime-local"
-                value={sessionForm.startTime}
-                onChange={(event) => setSessionForm((old) => ({ ...old, startTime: event.target.value }))}
-              />
-            </div>
-            <div>
-              <label htmlFor="session-end">End Time</label>
-              <input
-                id="session-end"
-                type="datetime-local"
-                value={sessionForm.endTime}
-                onChange={(event) => setSessionForm((old) => ({ ...old, endTime: event.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="row inline">
-            <label htmlFor="session-active">Active</label>
-            <input
-              id="session-active"
-              type="checkbox"
-              checked={sessionForm.isActive}
-              onChange={(event) => setSessionForm((old) => ({ ...old, isActive: event.target.checked }))}
-            />
-          </div>
-
-          <div className="actions">
-            <button type="submit" disabled={busy}>
-              {busy ? 'Saving...' : `${sessionEditId ? 'Update' : 'Create'} Session`}
-            </button>
-            {sessionEditId ? (
-              <button type="button" onClick={cancelSessionEdit}>
-                Cancel Edit
-              </button>
-            ) : null}
-          </div>
-        </form>
-      </article>
-
-      <article className="card">
-        <h3>Session List</h3>
+        <h3>IELTS Test Sessions</h3>
+        <p className="muted" style={{ marginBottom: 12 }}>
+          Showing sessions for the currently logged-in user. The backend scopes
+          session listing to the authenticated user.
+        </p>
         <div className="list">
-          {sessions.length === 0 ? <p className="empty-state">No sessions yet.</p> : null}
-          {sessions.map((item) => {
-            const id = getRecordId(item)
+          {sessions.length === 0 && (
+            <p className="empty-state">No sessions found.</p>
+          )}
+          {sessions.map((s) => {
+            const id = getRecordId(s)
             return (
-              <div key={id || item.name} className="list-item">
-                <div>
-                  <strong>{item.name}</strong>
-                  <p>
-                    {toDateTimeLocal(item.startTime) || 'No start'} - {toDateTimeLocal(item.endTime) || 'No end'}
+              <div key={id || Math.random()} className="list-item">
+                <div style={{ flex: 1 }}>
+                  <div className="list-item-header">
+                    <strong>
+                      {(s.test_type || 'ielts').toUpperCase()} Session
+                    </strong>
+                    <span
+                      className={`badge ${
+                        s.status === 'graded'
+                          ? 'badge-green'
+                          : s.status === 'submitted'
+                            ? 'badge-blue'
+                            : s.status === 'in_progress'
+                              ? 'badge-yellow'
+                              : ''
+                      }`}
+                    >
+                      {s.status}
+                    </span>
+                    {s.module_type && (
+                      <span className="badge">{s.module_type}</span>
+                    )}
+                  </div>
+                  <p className="muted">
+                    Started: {formatDate(s.started_at)}
+                    {s.submitted_at &&
+                      ` · Submitted: ${formatDate(s.submitted_at)}`}
                   </p>
-                </div>
-                <div className="actions">
-                  <button type="button" onClick={() => startSessionEdit(item)}>
-                    Edit
-                  </button>
-                  <button type="button" onClick={() => deleteSession(id)} disabled={!id || busy}>
-                    Delete
-                  </button>
+                  <p className="muted">Test ID: {s.test_id}</p>
                 </div>
               </div>
             )

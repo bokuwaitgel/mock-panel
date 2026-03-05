@@ -1,121 +1,119 @@
 import { useAdmin } from '../admin/AdminContext'
 
 export function UsersPage() {
-  const {
-    busy,
-    users,
-    userForm,
-    setUserForm,
-    userEditId,
-    saveUser,
-    cancelUserEdit,
-    startUserEdit,
-    deleteUser,
-    getRecordId,
-  } = useAdmin()
+  const { busy, users, userForm, setUserForm, saveUser, getRecordId, formatDate } =
+    useAdmin()
 
   return (
     <section className="page-grid">
+      {/* Register form */}
       <article className="card">
-        <h3>{userEditId ? 'Edit User' : 'Create User / Admin'}</h3>
+        <h3>Register New User</h3>
         <form onSubmit={saveUser}>
           <div className="row two-col">
             <div>
-              <label htmlFor="user-name">Name</label>
+              <label htmlFor="u-name">Username</label>
               <input
-                id="user-name"
-                value={userForm.name}
-                onChange={(event) => setUserForm((old) => ({ ...old, name: event.target.value }))}
+                id="u-name"
+                value={userForm.username}
+                onChange={(e) =>
+                  setUserForm((f) => ({ ...f, username: e.target.value }))
+                }
+                minLength={3}
+                maxLength={50}
                 required
               />
             </div>
             <div>
-              <label htmlFor="user-email">Email</label>
+              <label htmlFor="u-email">Email</label>
               <input
-                id="user-email"
+                id="u-email"
                 type="email"
                 value={userForm.email}
-                onChange={(event) => setUserForm((old) => ({ ...old, email: event.target.value }))}
+                onChange={(e) =>
+                  setUserForm((f) => ({ ...f, email: e.target.value }))
+                }
                 required
               />
             </div>
           </div>
 
-          {!userEditId ? (
-            <div className="row">
-              <label htmlFor="user-password">Password</label>
+          <div className="row two-col">
+            <div>
+              <label htmlFor="u-password">Password</label>
               <input
-                id="user-password"
+                id="u-password"
                 type="password"
-                value={userForm.password || ''}
-                onChange={(event) => setUserForm((old) => ({ ...old, password: event.target.value }))}
+                value={userForm.password}
+                onChange={(e) =>
+                  setUserForm((f) => ({ ...f, password: e.target.value }))
+                }
+                minLength={6}
                 required
               />
             </div>
-          ) : null}
-
-          <div className="row two-col">
             <div>
-              <label htmlFor="user-role">Role</label>
+              <label htmlFor="u-role">Role</label>
               <select
-                id="user-role"
+                id="u-role"
                 value={userForm.role}
-                onChange={(event) =>
-                  setUserForm((old) => ({
-                    ...old,
-                    role: event.target.value === 'admin' ? 'admin' : 'user',
+                onChange={(e) =>
+                  setUserForm((f) => ({
+                    ...f,
+                    role: e.target.value as typeof userForm.role,
                   }))
                 }
               >
-                <option value="user">User</option>
+                <option value="candidate">Candidate</option>
+                <option value="examiner">Examiner</option>
                 <option value="admin">Admin</option>
               </select>
-            </div>
-            <div className="row inline align-end">
-              <label htmlFor="user-active">Active</label>
-              <input
-                id="user-active"
-                type="checkbox"
-                checked={userForm.isActive}
-                onChange={(event) => setUserForm((old) => ({ ...old, isActive: event.target.checked }))}
-              />
             </div>
           </div>
 
           <div className="actions">
-            <button type="submit" disabled={busy}>
-              {busy ? 'Saving...' : `${userEditId ? 'Update' : 'Create'} User`}
+            <button type="submit" className="btn-primary" disabled={busy}>
+              {busy ? 'Creating...' : 'Create User'}
             </button>
-            {userEditId ? (
-              <button type="button" onClick={cancelUserEdit}>
-                Cancel Edit
-              </button>
-            ) : null}
           </div>
         </form>
       </article>
 
+      {/* User list */}
       <article className="card">
-        <h3>User List</h3>
+        <h3>Users ({users.length})</h3>
         <div className="list">
-          {users.length === 0 ? <p className="empty-state">No users yet.</p> : null}
-          {users.map((item) => {
-            const id = getRecordId(item)
+          {users.length === 0 && (
+            <p className="empty-state">No users found.</p>
+          )}
+          {users.map((u) => {
+            const id = getRecordId(u)
             return (
-              <div key={id || item.email} className="list-item">
-                <div>
-                  <strong>{item.name}</strong>
-                  <p>
-                    {item.email} | {item.role}
-                  </p>
-                </div>
-                <div className="actions">
-                  <button type="button" onClick={() => startUserEdit(item)}>
-                    Edit
-                  </button>
-                  <button type="button" onClick={() => deleteUser(id)} disabled={!id || busy}>
-                    Delete
-                  </button>
+              <div key={id || u.email} className="list-item">
+                <div style={{ flex: 1 }}>
+                  <div className="list-item-header">
+                    <strong>{u.username}</strong>
+                    <span
+                      className={`badge ${
+                        u.role === 'admin'
+                          ? 'badge-red'
+                          : u.role === 'examiner'
+                            ? 'badge-blue'
+                            : ''
+                      }`}
+                    >
+                      {u.role}
+                    </span>
+                    {u.is_active ? (
+                      <span className="badge badge-green">active</span>
+                    ) : (
+                      <span className="badge badge-red">inactive</span>
+                    )}
+                  </div>
+                  <p className="muted">{u.email}</p>
+                  {u.created_at && (
+                    <p className="muted">Joined: {formatDate(u.created_at)}</p>
+                  )}
                 </div>
               </div>
             )

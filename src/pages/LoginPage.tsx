@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAdmin } from '../admin/AdminContext'
 
 export function LoginPage() {
@@ -69,12 +69,9 @@ export function LoginPage() {
           </div>
 
           <div className="actions">
-            <button type="submit" disabled={busy}>
+            <button type="submit" className="btn-primary" disabled={busy}>
               {busy ? 'Signing in...' : 'Sign In'}
             </button>
-            <Link to="/settings" className="text-link">
-              Advanced settings
-            </Link>
           </div>
         </form>
       </section>

@@ -7,7 +7,11 @@ export function SpeakingPage() {
   const {
     speakingPartForm: form,
     setSpeakingPartForm: setForm,
+    speakingPartEditId,
     saveSpeakingPart,
+    startSpeakingPartEdit,
+    cancelSpeakingPartEdit,
+    deleteSpeakingPart,
     speakingParts,
     busy,
     getRecordId,
@@ -28,9 +32,9 @@ export function SpeakingPage() {
 
   return (
     <section className="page-grid">
-      {/* Create form */}
-      <article className="card">
-        <h3>Create Speaking Part</h3>
+      {/* Create / Edit form */}
+      <article className={`card${speakingPartEditId ? ' editing' : ''}`}>
+        <h3>{speakingPartEditId ? '✎ Edit Speaking Part' : 'Create Speaking Part'}</h3>
         <form onSubmit={saveSpeakingPart}>
           <div className="row two-col">
             <div>
@@ -111,8 +115,13 @@ export function SpeakingPage() {
 
           <div className="actions">
             <button type="submit" className="btn-primary" disabled={busy}>
-              {busy ? 'Creating…' : 'Create Speaking Part'}
+              {busy ? 'Saving…' : speakingPartEditId ? 'Update Speaking Part' : 'Create Speaking Part'}
             </button>
+            {speakingPartEditId && (
+              <button type="button" className="btn-secondary" onClick={cancelSpeakingPartEdit}>
+                Cancel
+              </button>
+            )}
           </div>
         </form>
       </article>
@@ -151,6 +160,10 @@ export function SpeakingPage() {
                         {p.time_limit_seconds}s
                         {id && <> · ID: {id.slice(-8)}</>}
                       </small>
+                    </div>
+                    <div className="list-item-actions">
+                      <button type="button" className="btn-small" onClick={() => startSpeakingPartEdit(p)} title="Edit">✎</button>
+                      <button type="button" className="btn-small btn-danger" onClick={() => deleteSpeakingPart(id)} disabled={!id || busy} title="Delete">✕</button>
                     </div>
                   </div>
 

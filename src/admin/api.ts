@@ -43,11 +43,17 @@ export const ENDPOINTS = {
   // IELTS Writing Tasks (admin)
   writingTaskCreate: '/ielts/admin/writing-tasks',
   writingTasksList: '/ielts/admin/writing-tasks/list',
+  writingTaskGet: '/ielts/admin/writing-tasks/get',
+  writingTaskUpdate: '/ielts/admin/writing-tasks/update',
+  writingTaskDelete: '/ielts/admin/writing-tasks/delete',
   writingTaskUploadImage: '/ielts/admin/writing-tasks/upload-image',
 
   // IELTS Speaking Parts (admin)
   speakingPartCreate: '/ielts/admin/speaking-parts',
   speakingPartsList: '/ielts/admin/speaking-parts/list',
+  speakingPartGet: '/ielts/admin/speaking-parts/get',
+  speakingPartUpdate: '/ielts/admin/speaking-parts/update',
+  speakingPartDelete: '/ielts/admin/speaking-parts/delete',
   speakingPartUploadAudio: '/ielts/admin/speaking-parts/upload-audio',
 
   // IELTS Tests

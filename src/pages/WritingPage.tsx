@@ -7,7 +7,11 @@ export function WritingPage() {
   const {
     writingTaskForm: form,
     setWritingTaskForm: setForm,
+    writingTaskEditId,
     saveWritingTask,
+    startWritingTaskEdit,
+    cancelWritingTaskEdit,
+    deleteWritingTask,
     writingTasks,
     busy,
     getRecordId,
@@ -26,9 +30,9 @@ export function WritingPage() {
 
   return (
     <section className="page-grid">
-      {/* Create form */}
-      <article className="card">
-        <h3>Create Writing Task</h3>
+      {/* Create / Edit form */}
+      <article className={`card${writingTaskEditId ? ' editing' : ''}`}>
+        <h3>{writingTaskEditId ? '✎ Edit Writing Task' : 'Create Writing Task'}</h3>
         <form onSubmit={saveWritingTask}>
           <div className="row two-col">
             <div>
@@ -94,8 +98,13 @@ export function WritingPage() {
 
           <div className="actions">
             <button type="submit" className="btn-primary" disabled={busy}>
-              {busy ? 'Creating…' : 'Create Writing Task'}
+              {busy ? 'Saving…' : writingTaskEditId ? 'Update Writing Task' : 'Create Writing Task'}
             </button>
+            {writingTaskEditId && (
+              <button type="button" className="btn-secondary" onClick={cancelWritingTaskEdit}>
+                Cancel
+              </button>
+            )}
           </div>
         </form>
       </article>
@@ -128,6 +137,10 @@ export function WritingPage() {
                         {t.min_words} min words · {t.time_limit_minutes} min
                         {id && <> · ID: {id.slice(-8)}</>}
                       </small>
+                    </div>
+                    <div className="list-item-actions">
+                      <button type="button" className="btn-small" onClick={() => startWritingTaskEdit(t)} title="Edit">✎</button>
+                      <button type="button" className="btn-small btn-danger" onClick={() => deleteWritingTask(id)} disabled={!id || busy} title="Delete">✕</button>
                     </div>
                   </div>
 

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useAdmin } from '../admin/AdminContext'
 import { ENDPOINTS } from '../admin/api'
+import { QUESTION_TYPES } from '../admin/types'
 
 export function ListeningSectionsPage() {
   const {
@@ -19,8 +20,23 @@ export function ListeningSectionsPage() {
   const [uploadFiles, setUploadFiles] = useState<Record<string, File | null>>({})
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
-  // Available listening questions for linking
-  const listeningQuestions = questions.filter((q) => q.section === 'listening')
+  // Question filter state
+  const [qTypeFilter, setQTypeFilter] = useState<string>('')
+  const [qSearchText, setQSearchText] = useState('')
+
+  // Available listening questions for linking (with filters)
+  const listeningQuestions = questions
+    .filter((q) => q.section === 'listening')
+    .filter((q) => !qTypeFilter || q.question_type === qTypeFilter)
+    .filter((q) => {
+      if (!qSearchText.trim()) return true
+      const search = qSearchText.toLowerCase()
+      return (
+        q.question_text.toLowerCase().includes(search) ||
+        String(q.question_number).includes(search) ||
+        (q.instructions ?? '').toLowerCase().includes(search)
+      )
+    })
 
   function toggleQuestionId(qid: string) {
     setForm((f) => {
@@ -69,20 +85,59 @@ export function ListeningSectionsPage() {
             />
           </div>
 
-          {listeningQuestions.length > 0 && (
+          {questions.filter((q) => q.section === 'listening').length > 0 && (
             <div className="row">
               <label>Link Questions <span className="muted">(select existing)</span></label>
+
+              {/* Filter controls */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                <select
+                  value={qTypeFilter}
+                  onChange={(e) => setQTypeFilter(e.target.value)}
+                  style={{ flex: '0 0 auto', minWidth: 180 }}
+                >
+                  <option value="">All question types</option>
+                  {QUESTION_TYPES.map((qt) => (
+                    <option key={qt} value={qt}>{qt.replace(/_/g, ' ')}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Search by text or #number…"
+                  value={qSearchText}
+                  onChange={(e) => setQSearchText(e.target.value)}
+                  style={{ flex: 1, minWidth: 140 }}
+                />
+                {(qTypeFilter || qSearchText) && (
+                  <button
+                    type="button"
+                    className="btn-small"
+                    onClick={() => { setQTypeFilter(''); setQSearchText('') }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              <small className="muted" style={{ marginBottom: 4, display: 'block' }}>
+                Showing {listeningQuestions.length} of {questions.filter((q) => q.section === 'listening').length} listening questions
+                {(form.question_ids ?? []).length > 0 && <> · <strong>{(form.question_ids ?? []).length} selected</strong></>}
+              </small>
+
               <div className="checkbox-grid">
                 {listeningQuestions.map((q) => {
                   const qid = getRecordId(q)
                   const checked = (form.question_ids ?? []).includes(qid)
                   return (
-                    <label key={qid} className="checkbox-label">
+                    <label key={qid} className="checkbox-label" title={q.question_text}>
                       <input type="checkbox" checked={checked} onChange={() => toggleQuestionId(qid)} />
                       #{q.question_number} – {q.question_type.replace(/_/g, ' ')}
                     </label>
                   )
                 })}
+                {listeningQuestions.length === 0 && (
+                  <span className="muted">No questions match the current filters.</span>
+                )}
               </div>
             </div>
           )}

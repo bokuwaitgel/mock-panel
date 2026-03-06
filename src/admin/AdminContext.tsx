@@ -128,14 +128,22 @@ type AdminContextValue = {
   // Writing Tasks
   writingTasks: WritingTask[]
   writingTaskForm: WritingTask
+  writingTaskEditId: string
   setWritingTaskForm: React.Dispatch<React.SetStateAction<WritingTask>>
   saveWritingTask: (e: FormEvent<HTMLFormElement>) => Promise<void>
+  startWritingTaskEdit: (item: WritingTask) => void
+  cancelWritingTaskEdit: () => void
+  deleteWritingTask: (id: string) => Promise<void>
 
   // Speaking Parts
   speakingParts: SpeakingPart[]
   speakingPartForm: SpeakingPart
+  speakingPartEditId: string
   setSpeakingPartForm: React.Dispatch<React.SetStateAction<SpeakingPart>>
   saveSpeakingPart: (e: FormEvent<HTMLFormElement>) => Promise<void>
+  startSpeakingPartEdit: (item: SpeakingPart) => void
+  cancelSpeakingPartEdit: () => void
+  deleteSpeakingPart: (id: string) => Promise<void>
 
   // Tests
   tests: Test[]
@@ -198,7 +206,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [listeningForm, setListeningForm] = useState<ListeningSection>({ ...BLANK_LISTENING })
   const [passageForm, setPassageForm] = useState<ReadingPassage>({ ...BLANK_PASSAGE })
   const [writingTaskForm, setWritingTaskForm] = useState<WritingTask>({ ...BLANK_WRITING_TASK })
+  const [writingTaskEditId, setWritingTaskEditId] = useState('')
   const [speakingPartForm, setSpeakingPartForm] = useState<SpeakingPart>({ ...BLANK_SPEAKING_PART })
+  const [speakingPartEditId, setSpeakingPartEditId] = useState('')
   const [testForm, setTestForm] = useState<Omit<Test, 'test_type'>>({ ...BLANK_TEST })
   const [testEditId, setTestEditId] = useState('')
   const [userForm, setUserForm] = useState<UserFormShape>({ ...BLANK_USER_FORM })
@@ -304,7 +314,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setListeningForm({ ...BLANK_LISTENING })
     setPassageForm({ ...BLANK_PASSAGE })
     setWritingTaskForm({ ...BLANK_WRITING_TASK })
+    setWritingTaskEditId('')
     setSpeakingPartForm({ ...BLANK_SPEAKING_PART })
+    setSpeakingPartEditId('')
     setUserForm({ ...BLANK_USER_FORM })
     setMessage('Logged out.')
   }
@@ -408,39 +420,98 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
   }
 
-  // ── Writing Task create ──────────────────
+  // ── Writing Task CRUD ────────────────────
 
   async function saveWritingTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!hasToken) { setError('Not authenticated.'); return }
     setError(''); setBusy(true)
     try {
-      const body: Record<string, unknown> = { ...writingTaskForm }
-      for (const k of ['id', '_id', 'created_at', 'created_by']) delete body[k]
-      await apiRequest<WritingTask>({ baseUrl: apiBaseUrl, path: ENDPOINTS.writingTaskCreate, method: 'POST', token, body })
-      setMessage('Writing task created.')
-      setWritingTaskForm({ ...BLANK_WRITING_TASK })
+      if (writingTaskEditId) {
+        const body: Record<string, unknown> = { ...writingTaskForm }
+        for (const k of ['id', '_id', 'created_at', 'created_by']) delete body[k]
+        body.task_id = writingTaskEditId
+        await apiRequest({ baseUrl: apiBaseUrl, path: ENDPOINTS.writingTaskUpdate, method: 'PUT', token, body })
+        setMessage('Writing task updated.')
+      } else {
+        const body: Record<string, unknown> = { ...writingTaskForm }
+        for (const k of ['id', '_id', 'created_at', 'created_by']) delete body[k]
+        await apiRequest<WritingTask>({ baseUrl: apiBaseUrl, path: ENDPOINTS.writingTaskCreate, method: 'POST', token, body })
+        setMessage('Writing task created.')
+      }
+      cancelWritingTaskEdit()
       await loadAll(false)
     } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
   }
 
-  // ── Speaking Part create ─────────────────
+  async function deleteWritingTask(id: string) {
+    if (!id || !window.confirm('Delete this writing task?')) return
+    if (!hasToken) { setError('Not authenticated.'); return }
+    setError(''); setBusy(true)
+    try {
+      await apiRequest({ baseUrl: apiBaseUrl, path: ENDPOINTS.writingTaskDelete, method: 'DELETE', token, body: { task_id: id } })
+      await loadAll(false); setMessage('Writing task deleted.')
+    } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
+  }
+
+  function startWritingTaskEdit(item: WritingTask) {
+    setWritingTaskEditId(getRecordId(item))
+    setWritingTaskForm({ ...item })
+  }
+
+  function cancelWritingTaskEdit() {
+    setWritingTaskEditId('')
+    setWritingTaskForm({ ...BLANK_WRITING_TASK })
+  }
+
+  // ── Speaking Part CRUD ───────────────────
 
   async function saveSpeakingPart(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!hasToken) { setError('Not authenticated.'); return }
     setError(''); setBusy(true)
     try {
-      const body: Record<string, unknown> = { ...speakingPartForm }
-      for (const k of ['id', '_id', 'created_at', 'created_by']) delete body[k]
-      if (body.follow_up_questions && Array.isArray(body.follow_up_questions) && (body.follow_up_questions as string[]).every((s) => !s.trim())) {
-        delete body.follow_up_questions
+      if (speakingPartEditId) {
+        const body: Record<string, unknown> = { ...speakingPartForm }
+        for (const k of ['id', '_id', 'created_at', 'created_by']) delete body[k]
+        body.part_id = speakingPartEditId
+        if (body.follow_up_questions && Array.isArray(body.follow_up_questions) && (body.follow_up_questions as string[]).every((s) => !s.trim())) {
+          delete body.follow_up_questions
+        }
+        await apiRequest({ baseUrl: apiBaseUrl, path: ENDPOINTS.speakingPartUpdate, method: 'PUT', token, body })
+        setMessage('Speaking part updated.')
+      } else {
+        const body: Record<string, unknown> = { ...speakingPartForm }
+        for (const k of ['id', '_id', 'created_at', 'created_by']) delete body[k]
+        if (body.follow_up_questions && Array.isArray(body.follow_up_questions) && (body.follow_up_questions as string[]).every((s) => !s.trim())) {
+          delete body.follow_up_questions
+        }
+        await apiRequest<SpeakingPart>({ baseUrl: apiBaseUrl, path: ENDPOINTS.speakingPartCreate, method: 'POST', token, body })
+        setMessage('Speaking part created.')
       }
-      await apiRequest<SpeakingPart>({ baseUrl: apiBaseUrl, path: ENDPOINTS.speakingPartCreate, method: 'POST', token, body })
-      setMessage('Speaking part created.')
-      setSpeakingPartForm({ ...BLANK_SPEAKING_PART })
+      cancelSpeakingPartEdit()
       await loadAll(false)
     } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
+  }
+
+  async function deleteSpeakingPart(id: string) {
+    if (!id || !window.confirm('Delete this speaking part?')) return
+    if (!hasToken) { setError('Not authenticated.'); return }
+    setError(''); setBusy(true)
+    try {
+      await apiRequest({ baseUrl: apiBaseUrl, path: ENDPOINTS.speakingPartDelete, method: 'DELETE', token, body: { part_id: id } })
+      await loadAll(false); setMessage('Speaking part deleted.')
+    } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
+  }
+
+  function startSpeakingPartEdit(item: SpeakingPart) {
+    setSpeakingPartEditId(getRecordId(item))
+    setSpeakingPartForm({ ...item })
+  }
+
+  function cancelSpeakingPartEdit() {
+    setSpeakingPartEditId('')
+    setSpeakingPartForm({ ...BLANK_SPEAKING_PART })
   }
 
   // ── Test CRUD ────────────────────────────
@@ -546,8 +617,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     readingPassages, passageForm, setPassageForm,
     saveReadingPassage, deleteReadingPassage,
 
-    writingTasks, writingTaskForm, setWritingTaskForm, saveWritingTask,
-    speakingParts, speakingPartForm, setSpeakingPartForm, saveSpeakingPart,
+    writingTasks, writingTaskForm, writingTaskEditId, setWritingTaskForm,
+    saveWritingTask, startWritingTaskEdit, cancelWritingTaskEdit, deleteWritingTask,
+    speakingParts, speakingPartForm, speakingPartEditId, setSpeakingPartForm,
+    saveSpeakingPart, startSpeakingPartEdit, cancelSpeakingPartEdit, deleteSpeakingPart,
 
     tests, testForm, testEditId, setTestForm, saveTest,
     startTestEdit, cancelTestEdit, deleteTest,

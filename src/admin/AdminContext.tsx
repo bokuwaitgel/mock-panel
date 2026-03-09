@@ -30,11 +30,13 @@ const BLANK_QUESTION: Question = {
   question_type: 'multiple_choice',
   question_text: '',
   points: 1.0,
+  accepted_answers: [],
 }
 
 const BLANK_LISTENING: ListeningSection = {
   part_number: 1,
   audio_url: '',
+  is_shared_across_modules: true,
 }
 
 const BLANK_PASSAGE: ReadingPassage = {
@@ -49,6 +51,7 @@ const BLANK_WRITING_TASK: WritingTask = {
   prompt: '',
   min_words: 150,
   time_limit_minutes: 20,
+  weight: 1,
 }
 
 const BLANK_SPEAKING_PART: SpeakingPart = {
@@ -63,6 +66,31 @@ const BLANK_TEST: Omit<Test, 'test_type'> = {
   title: '',
   module_type: 'academic',
   description: '',
+  module_structure: {
+    listening_shared: true,
+    speaking_shared: true,
+    reading_varies_by_module: true,
+    writing_varies_by_module: true,
+  },
+  structure_policy: {
+    strict_ielts_format: false,
+    enforce_global_40_questions: false,
+    enforce_module_specific_rw: false,
+  },
+  duration_policy: {
+    total_duration_minutes: 164,
+    section_time_limits_minutes: {
+      listening: 40,
+      reading: 60,
+      writing: 60,
+    },
+  },
+  form_metadata: {
+    form_code: '',
+    version: '',
+    source: '',
+    tags: [],
+  },
   listening_section_ids: [],
   reading_passage_ids: [],
   writing_task_ids: [],
@@ -331,12 +359,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       if (questionEditId) {
         const body: Record<string, unknown> = { ...questionForm }
         for (const k of ['id', '_id', 'section', 'created_at', 'created_by']) delete body[k]
+        if (!Array.isArray(body.accepted_answers) || (body.accepted_answers as unknown[]).length === 0) {
+          delete body.accepted_answers
+        }
         body.question_id = questionEditId
         await apiRequest({ baseUrl: apiBaseUrl, path: ENDPOINTS.questionUpdate, method: 'PUT', token, body })
         setMessage('Question updated.')
       } else {
         const body: Record<string, unknown> = { ...questionForm }
         for (const k of ['id', '_id', 'created_at', 'created_by', 'section']) delete body[k]
+        if (!Array.isArray(body.accepted_answers) || (body.accepted_answers as unknown[]).length === 0) {
+          delete body.accepted_answers
+        }
         body.section = questionSection
         await apiRequest({ baseUrl: apiBaseUrl, path: ENDPOINTS.questionCreate, method: 'POST', token, body })
         setMessage('Question created.')
@@ -376,7 +410,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setError(''); setBusy(true)
     try {
       const body: Record<string, unknown> = { ...listeningForm }
-      for (const k of ['id', '_id', 'created_at', 'created_by', 'questions']) delete body[k]
+      for (const k of ['id', '_id', 'created_at', 'created_by']) delete body[k]
+      if (!body.part_title) delete body.part_title
+      if (body.question_number_from === '' || body.question_number_from == null) delete body.question_number_from
+      if (body.question_number_to === '' || body.question_number_to == null) delete body.question_number_to
+      if (!Array.isArray(body.question_ids) || body.question_ids.length === 0) delete body.question_ids
+      if (!Array.isArray(body.questions) || body.questions.length === 0) delete body.questions
       await apiRequest({ baseUrl: apiBaseUrl, path: ENDPOINTS.listeningSectionCreate, method: 'POST', token, body })
       setMessage('Listening section created.')
       setListeningForm({ ...BLANK_LISTENING })
@@ -403,6 +442,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       const body: Record<string, unknown> = { ...passageForm }
       for (const k of ['id', '_id', 'created_at', 'created_by', 'questions']) delete body[k]
+      if (!body.source) delete body.source
+      if (!body.source_type) delete body.source_type
+      if (!body.module_type_override) delete body.module_type_override
+      if (body.question_number_from === '' || body.question_number_from == null) delete body.question_number_from
+      if (body.question_number_to === '' || body.question_number_to == null) delete body.question_number_to
       await apiRequest({ baseUrl: apiBaseUrl, path: ENDPOINTS.readingPassageCreate, method: 'POST', token, body })
       setMessage('Reading passage created.')
       setPassageForm({ ...BLANK_PASSAGE })
@@ -524,12 +568,28 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       if (testEditId) {
         const body: Record<string, unknown> = { ...testForm }
         for (const k of ['id', '_id', 'created_at', 'created_by', 'test_type']) delete body[k]
+        if (typeof body.form_metadata === 'object' && body.form_metadata) {
+          const fm = { ...(body.form_metadata as Record<string, unknown>) }
+          if (!fm.form_code) delete fm.form_code
+          if (!fm.version) delete fm.version
+          if (!fm.source) delete fm.source
+          if (!Array.isArray(fm.tags) || fm.tags.length === 0) delete fm.tags
+          body.form_metadata = fm
+        }
         body.test_id = testEditId
         await apiRequest({ baseUrl: apiBaseUrl, path: ENDPOINTS.testUpdate, method: 'PUT', token, body })
         setMessage('Test updated.')
       } else {
         const body: Record<string, unknown> = { ...testForm }
         for (const k of ['id', '_id', 'created_at', 'created_by', 'test_type']) delete body[k]
+        if (typeof body.form_metadata === 'object' && body.form_metadata) {
+          const fm = { ...(body.form_metadata as Record<string, unknown>) }
+          if (!fm.form_code) delete fm.form_code
+          if (!fm.version) delete fm.version
+          if (!fm.source) delete fm.source
+          if (!Array.isArray(fm.tags) || fm.tags.length === 0) delete fm.tags
+          body.form_metadata = fm
+        }
         await apiRequest<Test>({ baseUrl: apiBaseUrl, path: ENDPOINTS.testCreate, method: 'POST', token, body })
         setMessage('Test created — users can now take it.')
       }
@@ -549,11 +609,39 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }
 
   function startTestEdit(item: Test) {
+    const moduleStructure = {
+      listening_shared: item.module_structure?.listening_shared ?? true,
+      speaking_shared: item.module_structure?.speaking_shared ?? true,
+      reading_varies_by_module: item.module_structure?.reading_varies_by_module ?? true,
+      writing_varies_by_module: item.module_structure?.writing_varies_by_module ?? true,
+    }
+    const structurePolicy = {
+      strict_ielts_format: item.structure_policy?.strict_ielts_format ?? false,
+      enforce_global_40_questions: item.structure_policy?.enforce_global_40_questions ?? false,
+      enforce_module_specific_rw: item.structure_policy?.enforce_module_specific_rw ?? false,
+      expected_counts: item.structure_policy?.expected_counts,
+    }
+    const durationPolicy = {
+      total_duration_minutes: item.duration_policy?.total_duration_minutes ?? 164,
+      section_time_limits_minutes: {
+        listening: item.duration_policy?.section_time_limits_minutes?.listening ?? 40,
+        reading: item.duration_policy?.section_time_limits_minutes?.reading ?? 60,
+        writing: item.duration_policy?.section_time_limits_minutes?.writing ?? 60,
+      },
+    }
+
     setTestEditId(getRecordId(item))
     setTestForm({
       title: item.title ?? '',
       module_type: item.module_type ?? 'academic',
       description: item.description ?? '',
+      module_structure: moduleStructure,
+      structure_policy: structurePolicy,
+      duration_policy: durationPolicy,
+      form_metadata: {
+        ...(BLANK_TEST.form_metadata ?? {}),
+        ...(item.form_metadata ?? {}),
+      },
       listening_section_ids: item.listening_section_ids ?? [],
       reading_passage_ids: item.reading_passage_ids ?? [],
       writing_task_ids: item.writing_task_ids ?? [],

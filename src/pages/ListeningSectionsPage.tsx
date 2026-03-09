@@ -76,6 +76,60 @@ export function ListeningSectionsPage() {
           </div>
 
           <div className="row">
+            <div>
+              <label htmlFor="ls-title">Part Title <span className="muted">(optional)</span></label>
+              <input
+                id="ls-title"
+                type="text"
+                value={form.part_title ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, part_title: e.target.value || undefined }))}
+                placeholder="Section topic"
+              />
+            </div>
+          </div>
+
+          <div className="row three-col">
+            <div>
+              <label htmlFor="ls-qfrom">Question # From</label>
+              <input
+                id="ls-qfrom"
+                type="number"
+                min={1}
+                max={40}
+                value={form.question_number_from ?? ''}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  question_number_from: e.target.value ? Number(e.target.value) : undefined,
+                }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="ls-qto">Question # To</label>
+              <input
+                id="ls-qto"
+                type="number"
+                min={1}
+                max={40}
+                value={form.question_number_to ?? ''}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  question_number_to: e.target.value ? Number(e.target.value) : undefined,
+                }))}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'end' }}>
+              <label className="checkbox-label" style={{ margin: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={form.is_shared_across_modules ?? true}
+                  onChange={(e) => setForm((f) => ({ ...f, is_shared_across_modules: e.target.checked }))}
+                />
+                Shared across Academic/General
+              </label>
+            </div>
+          </div>
+
+          <div className="row">
             <label htmlFor="ls-desc">Description <span className="muted">(optional)</span></label>
             <input
               id="ls-desc"
@@ -85,62 +139,63 @@ export function ListeningSectionsPage() {
             />
           </div>
 
-          {questions.filter((q) => q.section === 'listening').length > 0 && (
-            <div className="row">
-              <label>Link Questions <span className="muted">(select existing)</span></label>
+          <div className="row">
+            <label>Link Questions <span className="muted">(select existing)</span></label>
 
-              {/* Filter controls */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-                <select
-                  value={qTypeFilter}
-                  onChange={(e) => setQTypeFilter(e.target.value)}
-                  style={{ flex: '0 0 auto', minWidth: 180 }}
+            {/* Filter controls */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+              <select
+                value={qTypeFilter}
+                onChange={(e) => setQTypeFilter(e.target.value)}
+                style={{ flex: '0 0 auto', minWidth: 180 }}
+              >
+                <option value="">All question types</option>
+                {QUESTION_TYPES.map((qt) => (
+                  <option key={qt} value={qt}>{qt.replace(/_/g, ' ')}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="Search by text or #number…"
+                value={qSearchText}
+                onChange={(e) => setQSearchText(e.target.value)}
+                style={{ flex: 1, minWidth: 140 }}
+              />
+              {(qTypeFilter || qSearchText) && (
+                <button
+                  type="button"
+                  className="btn-small"
+                  onClick={() => { setQTypeFilter(''); setQSearchText('') }}
                 >
-                  <option value="">All question types</option>
-                  {QUESTION_TYPES.map((qt) => (
-                    <option key={qt} value={qt}>{qt.replace(/_/g, ' ')}</option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Search by text or #number…"
-                  value={qSearchText}
-                  onChange={(e) => setQSearchText(e.target.value)}
-                  style={{ flex: 1, minWidth: 140 }}
-                />
-                {(qTypeFilter || qSearchText) && (
-                  <button
-                    type="button"
-                    className="btn-small"
-                    onClick={() => { setQTypeFilter(''); setQSearchText('') }}
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              <small className="muted" style={{ marginBottom: 4, display: 'block' }}>
-                Showing {listeningQuestions.length} of {questions.filter((q) => q.section === 'listening').length} listening questions
-                {(form.question_ids ?? []).length > 0 && <> · <strong>{(form.question_ids ?? []).length} selected</strong></>}
-              </small>
-
-              <div className="checkbox-grid">
-                {listeningQuestions.map((q) => {
-                  const qid = getRecordId(q)
-                  const checked = (form.question_ids ?? []).includes(qid)
-                  return (
-                    <label key={qid} className="checkbox-label" title={q.question_text}>
-                      <input type="checkbox" checked={checked} onChange={() => toggleQuestionId(qid)} />
-                      #{q.question_number} – {q.question_type.replace(/_/g, ' ')}
-                    </label>
-                  )
-                })}
-                {listeningQuestions.length === 0 && (
-                  <span className="muted">No questions match the current filters.</span>
-                )}
-              </div>
+                  Clear
+                </button>
+              )}
             </div>
-          )}
+
+            <small className="muted" style={{ marginBottom: 4, display: 'block' }}>
+              Showing {listeningQuestions.length} of {questions.filter((q) => q.section === 'listening').length} listening questions
+              {(form.question_ids ?? []).length > 0 && <> · <strong>{(form.question_ids ?? []).length} selected</strong></>}
+            </small>
+
+            <div className="checkbox-grid">
+              {listeningQuestions.map((q) => {
+                const qid = getRecordId(q)
+                const checked = (form.question_ids ?? []).includes(qid)
+                return (
+                  <label key={qid} className="checkbox-label" title={q.question_text}>
+                    <input type="checkbox" checked={checked} onChange={() => toggleQuestionId(qid)} />
+                    #{q.question_number} – {q.question_type.replace(/_/g, ' ')}
+                  </label>
+                )
+              })}
+              {questions.filter((q) => q.section === 'listening').length === 0 && (
+                <span className="muted">No existing listening questions yet. Create some in the Questions page.</span>
+              )}
+              {questions.filter((q) => q.section === 'listening').length > 0 && listeningQuestions.length === 0 && (
+                <span className="muted">No questions match the current filters.</span>
+              )}
+            </div>
+          </div>
 
           <div className="actions">
             <button type="submit" className="btn-primary" disabled={busy}>
@@ -168,8 +223,15 @@ export function ListeningSectionsPage() {
                         <span className="badge badge-blue">
                           {(s.questions?.length ?? s.question_ids?.length ?? 0)} Q
                         </span>
+                        {s.is_shared_across_modules !== false && <span className="badge">shared</span>}
                       </div>
+                      {s.part_title && <p><strong>{s.part_title}</strong></p>}
                       {s.description && <p>{s.description}</p>}
+                      {(s.question_number_from || s.question_number_to) && (
+                        <small className="muted">
+                          Range: {s.question_number_from ?? '?'}–{s.question_number_to ?? '?'}
+                        </small>
+                      )}
                       {s.audio_url && (
                         <div className="upload-current">
                           🔊 <a href={s.audio_url} target="_blank" rel="noreferrer">{s.audio_url.split('/').pop()?.slice(0, 40)}</a>

@@ -37,6 +37,9 @@ export function QuestionsPage() {
   } = useAdmin()
 
   const needsOptions = TYPES_WITH_OPTIONS.has(questionForm.question_type)
+  const acceptedAnswersText = Array.isArray(questionForm.accepted_answers)
+    ? questionForm.accepted_answers.map((a) => String(a)).join('\n')
+    : ''
 
   /* ── Option helpers ─────────────────────── */
   function addOption() {
@@ -276,6 +279,28 @@ export function QuestionsPage() {
                 />
               </div>
               <div />
+            </div>
+
+            <div className="row">
+              <label htmlFor="q-accepted">
+                Accepted Answers <span className="muted">(optional, one per line)</span>
+              </label>
+              <textarea
+                id="q-accepted"
+                rows={3}
+                value={acceptedAnswersText}
+                onChange={(e) => {
+                  const values = e.target.value
+                    .split('\n')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                  setQuestionForm((f) => ({
+                    ...f,
+                    accepted_answers: values.length > 0 ? values : [],
+                  }))
+                }}
+                placeholder={'ONE WORD\nONE WORD ONLY\nA'}
+              />
             </div>
           </div>
 

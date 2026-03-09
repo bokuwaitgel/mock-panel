@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useAdmin } from '../admin/AdminContext'
 import { ENDPOINTS } from '../admin/api'
+import { MODULE_TYPES, SOURCE_TYPES } from '../admin/types'
 
 export function ReadingPassagesPage() {
   const {
@@ -89,6 +90,73 @@ export function ReadingPassagesPage() {
             />
           </div>
 
+          <div className="row three-col">
+            <div>
+              <label htmlFor="rp-source-type">Source Type</label>
+              <select
+                id="rp-source-type"
+                value={form.source_type ?? ''}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  source_type: (e.target.value || undefined) as typeof f.source_type,
+                }))}
+              >
+                <option value="">—</option>
+                {SOURCE_TYPES.map((sourceType) => (
+                  <option key={sourceType} value={sourceType}>{sourceType}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="rp-module-override">Module Override</label>
+              <select
+                id="rp-module-override"
+                value={form.module_type_override ?? ''}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  module_type_override: (e.target.value || undefined) as typeof f.module_type_override,
+                }))}
+              >
+                <option value="">—</option>
+                {MODULE_TYPES.map((module) => (
+                  <option key={module} value={module}>{module}</option>
+                ))}
+              </select>
+            </div>
+            <div />
+          </div>
+
+          <div className="row two-col">
+            <div>
+              <label htmlFor="rp-qfrom">Question # From</label>
+              <input
+                id="rp-qfrom"
+                type="number"
+                min={1}
+                max={40}
+                value={form.question_number_from ?? ''}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  question_number_from: e.target.value ? Number(e.target.value) : undefined,
+                }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="rp-qto">Question # To</label>
+              <input
+                id="rp-qto"
+                type="number"
+                min={1}
+                max={40}
+                value={form.question_number_to ?? ''}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  question_number_to: e.target.value ? Number(e.target.value) : undefined,
+                }))}
+              />
+            </div>
+          </div>
+
           {readingQuestions.length > 0 && (
             <div className="row">
               <label>Link Questions <span className="muted">(select existing)</span></label>
@@ -133,9 +201,13 @@ export function ReadingPassagesPage() {
                         <span className="badge badge-green">
                           {(p.questions?.length ?? p.question_ids?.length ?? 0)} Q
                         </span>
+                        {p.module_type_override && <span className="badge badge-blue">{p.module_type_override}</span>}
                       </div>
                       <p>{p.body.length > 120 ? p.body.slice(0, 120) + '…' : p.body}</p>
                       {p.source && <small className="muted">Source: {p.source}</small>}
+                      {(p.question_number_from || p.question_number_to) && (
+                        <small className="muted">Range: {p.question_number_from ?? '?'}–{p.question_number_to ?? '?'}</small>
+                      )}
                       {p.image_url && (
                         <div className="upload-current">
                           🖼️ <a href={p.image_url} target="_blank" rel="noreferrer">{p.image_url.split('/').pop()?.slice(0, 40)}</a>

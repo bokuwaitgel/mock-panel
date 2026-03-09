@@ -4,8 +4,6 @@ import { useAdmin } from '../admin/AdminContext'
 
 export function LoginPage() {
   const {
-    apiBaseUrl,
-    setApiBaseUrl,
     login,
     loginEmail,
     setLoginEmail,
@@ -32,16 +30,6 @@ export function LoginPage() {
 
         {error ? <p className="status error">{error}</p> : null}
         {message ? <p className="status success">{message}</p> : null}
-
-        <div className="row">
-          <label htmlFor="base-url">API Base URL</label>
-          <input
-            id="base-url"
-            value={apiBaseUrl}
-            onChange={(event) => setApiBaseUrl(event.target.value)}
-            placeholder="http://localhost:8000"
-          />
-        </div>
 
         <form onSubmit={login}>
           <div className="row">

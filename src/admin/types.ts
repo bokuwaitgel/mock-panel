@@ -5,6 +5,8 @@
 // ── Module & Section types ───────────────────
 export const MODULE_TYPES = ['academic', 'general'] as const
 export type ModuleType = (typeof MODULE_TYPES)[number]
+export const SOURCE_TYPES = ['book', 'journal', 'magazine', 'newspaper', 'other'] as const
+export type SourceType = (typeof SOURCE_TYPES)[number]
 
 // ── IELTS Question Types (listening & reading bank) ──────
 export const QUESTION_TYPES = [
@@ -39,6 +41,7 @@ export type Question = {
   question_text: string
   options?: OptionItem[]
   correct_answer?: unknown
+  accepted_answers?: unknown[]
   max_words?: number
   audio_url?: string
   image_url?: string
@@ -53,8 +56,12 @@ export type ListeningSection = {
   id?: string
   _id?: string
   part_number: number
+  part_title?: string
   description?: string
   audio_url: string
+  question_number_from?: number
+  question_number_to?: number
+  is_shared_across_modules?: boolean
   question_ids?: string[]
   questions?: Question[]
   created_at?: string
@@ -69,7 +76,11 @@ export type ReadingPassage = {
   title: string
   body: string
   source?: string
+  source_type?: SourceType
+  module_type_override?: ModuleType
   image_url?: string
+  question_number_from?: number
+  question_number_to?: number
   question_ids?: string[]
   questions?: Question[]
   created_at?: string
@@ -90,8 +101,10 @@ export type WritingTask = {
   question_type: string
   prompt: string
   image_url?: string
+  module_type_override?: ModuleType
   min_words: number
   time_limit_minutes: number
+  weight?: number
   created_at?: string
   created_by?: string
 }
@@ -125,6 +138,34 @@ export type Test = {
   title: string
   module_type: string
   description?: string
+  module_structure?: {
+    listening_shared: boolean
+    speaking_shared: boolean
+    reading_varies_by_module: boolean
+    writing_varies_by_module: boolean
+  }
+  structure_policy?: {
+    strict_ielts_format: boolean
+    enforce_global_40_questions: boolean
+    enforce_module_specific_rw: boolean
+    expected_counts?: Record<string, number>
+  }
+  scoring_policy?: {
+    scale_max_band: number
+    allow_half_bands: boolean
+    overall_rounding_step: number
+    band_descriptors?: Record<string, string>
+  }
+  duration_policy?: {
+    total_duration_minutes: number
+    section_time_limits_minutes: Record<string, number>
+  }
+  form_metadata?: {
+    form_code?: string
+    version?: string
+    source?: string
+    tags?: string[]
+  }
   listening_section_ids: string[]
   reading_passage_ids: string[]
   writing_task_ids: string[]

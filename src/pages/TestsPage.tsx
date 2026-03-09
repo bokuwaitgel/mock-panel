@@ -35,9 +35,21 @@ export function TestsPage() {
     (form.writing_task_ids?.length ?? 0) +
     (form.speaking_part_ids?.length ?? 0)
 
+  const structurePolicy = {
+    strict_ielts_format: form.structure_policy?.strict_ielts_format ?? false,
+    enforce_global_40_questions: form.structure_policy?.enforce_global_40_questions ?? false,
+    enforce_module_specific_rw: form.structure_policy?.enforce_module_specific_rw ?? false,
+    expected_counts: form.structure_policy?.expected_counts,
+  }
+
+  const formMetadata = {
+    form_code: form.form_metadata?.form_code ?? '',
+    version: form.form_metadata?.version ?? '',
+    source: form.form_metadata?.source ?? '',
+  }
+
   return (
     <section className="page-grid">
-      {/* ─── Create / Edit Test ─── */}
       <article className={`card${testEditId ? ' editing' : ''}`}>
         <h3>{testEditId ? '✎ Edit Test' : 'Assemble Test'}</h3>
         <form onSubmit={saveTest}>
@@ -78,9 +90,187 @@ export function TestsPage() {
             />
           </div>
 
-          {/* ── Component pickers ── */}
+          <div className="row">
+            <label>Structure Policy</label>
+            <div className="checkbox-grid">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={structurePolicy.strict_ielts_format}
+                  onChange={(e) => setForm((f) => ({
+                    ...f,
+                    structure_policy: {
+                      strict_ielts_format: e.target.checked,
+                      enforce_global_40_questions: f.structure_policy?.enforce_global_40_questions ?? false,
+                      enforce_module_specific_rw: f.structure_policy?.enforce_module_specific_rw ?? false,
+                      expected_counts: f.structure_policy?.expected_counts,
+                    },
+                  }))}
+                />
+                Strict IELTS format (4/3/2/3)
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={structurePolicy.enforce_global_40_questions}
+                  onChange={(e) => setForm((f) => ({
+                    ...f,
+                    structure_policy: {
+                      strict_ielts_format: f.structure_policy?.strict_ielts_format ?? false,
+                      enforce_global_40_questions: e.target.checked,
+                      enforce_module_specific_rw: f.structure_policy?.enforce_module_specific_rw ?? false,
+                      expected_counts: f.structure_policy?.expected_counts,
+                    },
+                  }))}
+                />
+                Enforce 40Q for Listening & Reading
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={structurePolicy.enforce_module_specific_rw}
+                  onChange={(e) => setForm((f) => ({
+                    ...f,
+                    structure_policy: {
+                      strict_ielts_format: f.structure_policy?.strict_ielts_format ?? false,
+                      enforce_global_40_questions: f.structure_policy?.enforce_global_40_questions ?? false,
+                      enforce_module_specific_rw: e.target.checked,
+                      expected_counts: f.structure_policy?.expected_counts,
+                    },
+                  }))}
+                />
+                Enforce module-specific Reading/Writing override
+              </label>
+            </div>
+          </div>
+
+          <div className="row two-col">
+            <div>
+              <label htmlFor="t-total-duration">Total Duration (minutes)</label>
+              <input
+                id="t-total-duration"
+                type="number"
+                min={1}
+                value={form.duration_policy?.total_duration_minutes ?? 164}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  duration_policy: {
+                    total_duration_minutes: Number(e.target.value),
+                    section_time_limits_minutes: {
+                      listening: f.duration_policy?.section_time_limits_minutes?.listening ?? 40,
+                      reading: f.duration_policy?.section_time_limits_minutes?.reading ?? 60,
+                      writing: f.duration_policy?.section_time_limits_minutes?.writing ?? 60,
+                    },
+                  },
+                }))}
+              />
+            </div>
+            <div />
+          </div>
+
+          <div className="row three-col">
+            <div>
+              <label htmlFor="t-listening-min">Listening Minutes</label>
+              <input
+                id="t-listening-min"
+                type="number"
+                min={1}
+                value={form.duration_policy?.section_time_limits_minutes?.listening ?? 40}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  duration_policy: {
+                    total_duration_minutes: f.duration_policy?.total_duration_minutes ?? 164,
+                    section_time_limits_minutes: {
+                      listening: Number(e.target.value),
+                      reading: f.duration_policy?.section_time_limits_minutes?.reading ?? 60,
+                      writing: f.duration_policy?.section_time_limits_minutes?.writing ?? 60,
+                    },
+                  },
+                }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="t-reading-min">Reading Minutes</label>
+              <input
+                id="t-reading-min"
+                type="number"
+                min={1}
+                value={form.duration_policy?.section_time_limits_minutes?.reading ?? 60}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  duration_policy: {
+                    total_duration_minutes: f.duration_policy?.total_duration_minutes ?? 164,
+                    section_time_limits_minutes: {
+                      listening: f.duration_policy?.section_time_limits_minutes?.listening ?? 40,
+                      reading: Number(e.target.value),
+                      writing: f.duration_policy?.section_time_limits_minutes?.writing ?? 60,
+                    },
+                  },
+                }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="t-writing-min">Writing Minutes</label>
+              <input
+                id="t-writing-min"
+                type="number"
+                min={1}
+                value={form.duration_policy?.section_time_limits_minutes?.writing ?? 60}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  duration_policy: {
+                    total_duration_minutes: f.duration_policy?.total_duration_minutes ?? 164,
+                    section_time_limits_minutes: {
+                      listening: f.duration_policy?.section_time_limits_minutes?.listening ?? 40,
+                      reading: f.duration_policy?.section_time_limits_minutes?.reading ?? 60,
+                      writing: Number(e.target.value),
+                    },
+                  },
+                }))}
+              />
+            </div>
+          </div>
+
+          <div className="row three-col">
+            <div>
+              <label htmlFor="t-form-code">Form Code</label>
+              <input
+                id="t-form-code"
+                type="text"
+                value={formMetadata.form_code}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  form_metadata: { ...(f.form_metadata ?? {}), form_code: e.target.value },
+                }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="t-version">Version</label>
+              <input
+                id="t-version"
+                type="text"
+                value={formMetadata.version}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  form_metadata: { ...(f.form_metadata ?? {}), version: e.target.value },
+                }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="t-source">Source</label>
+              <input
+                id="t-source"
+                type="text"
+                value={formMetadata.source}
+                onChange={(e) => setForm((f) => ({
+                  ...f,
+                  form_metadata: { ...(f.form_metadata ?? {}), source: e.target.value },
+                }))}
+              />
+            </div>
+          </div>
+
           <div className="test-pickers">
-            {/* Listening */}
             <div className="picker-section">
               <div className="picker-header">
                 <span className="picker-icon">🎧</span>
@@ -114,7 +304,6 @@ export function TestsPage() {
               )}
             </div>
 
-            {/* Reading */}
             <div className="picker-section">
               <div className="picker-header">
                 <span className="picker-icon">📖</span>
@@ -148,7 +337,6 @@ export function TestsPage() {
               )}
             </div>
 
-            {/* Writing */}
             <div className="picker-section">
               <div className="picker-header">
                 <span className="picker-icon">✍️</span>
@@ -181,7 +369,6 @@ export function TestsPage() {
               )}
             </div>
 
-            {/* Speaking */}
             <div className="picker-section">
               <div className="picker-header">
                 <span className="picker-icon">🗣️</span>
@@ -217,7 +404,6 @@ export function TestsPage() {
             </div>
           </div>
 
-          {/* Summary bar */}
           <div className="test-summary">
             <span>🎧 {form.listening_section_ids?.length ?? 0}</span>
             <span>📖 {form.reading_passage_ids?.length ?? 0}</span>
@@ -239,7 +425,6 @@ export function TestsPage() {
         </form>
       </article>
 
-      {/* ─── Tests list ─── */}
       <article className="card">
         <h3>Tests ({tests.length})</h3>
         <div className="list">
@@ -259,8 +444,14 @@ export function TestsPage() {
                       <div className="list-item-header">
                         <strong>{t.title}</strong>
                         <span className="badge badge-blue">{t.module_type}</span>
+                        {t.structure_policy?.strict_ielts_format && <span className="badge">strict</span>}
                       </div>
                       {t.description && <p>{t.description}</p>}
+                      {(t.form_metadata?.form_code || t.form_metadata?.version) && (
+                        <small className="muted">
+                          {t.form_metadata?.form_code ?? '—'} {t.form_metadata?.version ? `· v${t.form_metadata.version}` : ''}
+                        </small>
+                      )}
                     </div>
                     <div className="list-item-actions">
                       <button className="btn-small" onClick={() => startTestEdit(t)} title="Edit">✎</button>
